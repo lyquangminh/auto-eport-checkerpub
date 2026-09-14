@@ -29,6 +29,6 @@ jobs:
           JOB_NO: ${{ github.event.client_payload.job_no }}
           CONTS_STR: ${{ github.event.client_payload.conts_str }}
           CALLBACK_URL: ${{ github.event.client_payload.callback_url }}
-          PASSCODE: ${{ github.event.client_payload.passcode }}
+          PASSCODE: ${{ secrets.WEBHOOK_PASSCODE }}
         run: |
           python main.py
