@@ -67,7 +67,7 @@ async def check_eport_single_site(container_string, site="CTL"):
 
             conts_list = [c.strip() for c in container_string.split(',') if c.strip()]
             
-            # Quét từng hàng dữ liệu
+            # Quét từng hàng dữ liệu trong kết quả ePort
             for row in rows:
                 cols = row.find_all('td')
                 if not cols:
@@ -76,22 +76,23 @@ async def check_eport_single_site(container_string, site="CTL"):
                 row_str = row.get_text()
                 for cont in conts_list:
                     if cont in row_str:
-                        # Vị trí các cột trong table ePort:
+                        # Vị trí chuẩn các cột trong bảng DOM ePort:
                         # cols[0]: Checkbox
-                        # cols[1]: Số Container (Container No.)
-                        # cols[2]: Thời gian (Time)
-                        # cols[3]: Vị trí container (Location)
-                        # cols[4]: Đã nhập bãi cảng (In yard) -> "Y" / "N"
+                        # cols[1]: Container No.
+                        # cols[2]: Time
+                        # cols[3]: Work (Tác nghiệp)
+                        # cols[4]: Location (Vị trí)
+                        # cols[5]: In yard (Đã nhập bãi cảng) -> Bắt chữ "Y" ở đây!
                         
                         in_yard_val = ""
-                        if len(cols) >= 5:
+                        if len(cols) > 5:
+                            in_yard_val = cols[5].get_text().strip()
+                        elif len(cols) == 5:
                             in_yard_val = cols[4].get_text().strip()
-                        elif len(cols) >= 4:
-                            in_yard_val = cols[3].get_text().strip()
 
+                        # Kiểm tra chữ Y (Đã hạ)
                         status = "Đã hạ" if in_yard_val.upper() == 'Y' else "Chưa hạ"
                         
-                        # Ưu tiên ghi nhận "Đã hạ" nếu tìm thấy
                         if cont not in results or results[cont] == "Chưa hạ":
                             results[cont] = status
 
