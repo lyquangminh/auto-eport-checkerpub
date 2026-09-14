@@ -25,6 +25,7 @@ jobs:
 
       - name: Run Main Script
         env:
+          ROW_INDEX: ${{ github.event.client_payload.row_index }}
           JOB_NO: ${{ github.event.client_payload.job_no }}
           CONTS_STR: ${{ github.event.client_payload.conts_str }}
           CALLBACK_URL: ${{ github.event.client_payload.callback_url }}
