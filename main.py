@@ -5,17 +5,12 @@ import requests
 from bs4 import BeautifulSoup
 from playwright.async_api import async_playwright
 
-# ------------------------------------------------------------------------------
-# 1. LẤY DỮ LIỆU TỪ DOCKER / GITHUB ACTIONS ENV (DO WEBHOOK TRUYỀN SANG)
-# ------------------------------------------------------------------------------
+ROW_INDEX = os.getenv("ROW_INDEX", "")
 JOB_NO = os.getenv("JOB_NO", "")
 CONTS_STR = os.getenv("CONTS_STR", "")
 CALLBACK_URL = os.getenv("CALLBACK_URL", "")
 PASSCODE = os.getenv("PASSCODE", "")
 
-# ------------------------------------------------------------------------------
-# 2. HÀM BÓC TÁCH BẢNG EPORT THÔNG MINH
-# ------------------------------------------------------------------------------
 def parse_eport_html(html_content, container_string):
     conts_list = [c.strip() for c in container_string.split(',') if c.strip()]
     results = {c: "Chưa hạ" for c in conts_list}
@@ -38,9 +33,6 @@ def parse_eport_html(html_content, container_string):
 
     return results
 
-# ------------------------------------------------------------------------------
-# 3. TRUY CẬP EPORT & GỬI KẾT QUẢ VỀ LẠI GAS VIA WEBHOOK
-# ------------------------------------------------------------------------------
 async def process_eport_job(page, job_no, container_string):
     url = f"https://eport.saigonnewport.com.vn/Container/GetContainerList?jobNo={job_no}"
     try:
@@ -53,12 +45,12 @@ async def process_eport_job(page, job_no, container_string):
         return {c: f"Lỗi ePort ({e})" for c in container_string.split(',')}
 
 async def main_async():
-    if not JOB_NO or not CONTS_STR:
-        print("❌ Thiếu JOB_NO hoặc CONTS_STR truyền từ Webhook Payload!")
+    if not CONTS_STR:
+        print("❌ Thiếu CONTS_STR truyền từ Webhook Payload!")
         return
 
-    print(f"🚀 Bắt đầu xử lý JOB: {JOB_NO}")
-    print(f"📦 Danh sách Cont cần kiểm tra: {CONTS_STR}")
+    print(f"🚀 Bắt đầu xử lý Dòng {ROW_INDEX} - JOB: {JOB_NO}")
+    print(f"📦 Danh sách Cont: {CONTS_STR}")
 
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True)
@@ -75,11 +67,11 @@ async def main_async():
 
         await browser.close()
 
-    # Gửi kết quả ngược lại cho GAS Web App
     if CALLBACK_URL:
-        print(f"📡 Đang gửi kết quả về GAS Webhook ({CALLBACK_URL})...")
+        print(f"📡 Đang gửi kết quả về GAS Webhook để ghi vào Cột H dòng {ROW_INDEX}...")
         payload = {
             "passcode": PASSCODE,
+            "row_index": int(ROW_INDEX) if ROW_INDEX else 0,
             "job_no": JOB_NO,
             "result_text": final_text
         }
@@ -88,8 +80,6 @@ async def main_async():
             print(f"🎉 Phản hồi từ GAS: {res.status_code} - {res.text}")
         except Exception as e:
             print(f"❌ Lỗi khi gửi webhook về GAS: {e}")
-    else:
-        print("⚠️ Không tìm thấy CALLBACK_URL để trả kết quả.")
 
 def main():
     asyncio.run(main_async())
